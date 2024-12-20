@@ -21,8 +21,9 @@ def analyze_xauusd_data(input_file, output_file, summary_file, max_value=5):
                 # Examine rows in steps of 8 starting from the current start_row
                 i = start_row
                 while i < len(data) - 7:
-                    # Extract three rows
+                    # Extract four rows for examination
                     segment = data.iloc[i:i+3]
+                    fourth_candle = data.iloc[i+3]
 
                     # Calculate max and min prices for the three rows
                     max_price = segment['high'].max()
@@ -31,12 +32,12 @@ def analyze_xauusd_data(input_file, output_file, summary_file, max_value=5):
                     # Calculate the delta
                     delta = max_price - min_price
 
-                    # Check the condition
-                    if delta > value_a:
-                        first_open_price = data.iloc[i + 3]['open'] if i + 3 < len(data) else None
+                    # Check the condition: delta > value_a AND fourth candle's high > max of the three previous candles
+                    if delta > value_a and fourth_candle['high'] > max_price:
+                        first_open_price = fourth_candle['open']
 
-                        # Extract the next 5 rows
-                        next_candles = data.iloc[i+3:i+8]
+                        # Extract the next 4 rows
+                        next_candles = data.iloc[i+4:i+8]
 
                         # Determine which extreme (max or min) occurs first
                         first_extreme = None
@@ -61,10 +62,10 @@ def analyze_xauusd_data(input_file, output_file, summary_file, max_value=5):
                         results.append([
                             len(results) + 1,  # Row number of the result
                             delta,             # Delta of three rows
-                            first_open_price,  # First open price after three candles
-                            first_extreme,     # First extreme (max or min of the next 5 rows)
+                            first_open_price,  # First open price after four candles
+                            first_extreme,     # First extreme (max or min of the next 4 rows)
                             second_extreme,    # Second extreme (the other value)
-                            delta_next,        # Delta of the next five rows
+                            delta_next,        # Delta of the next four rows
                             col_g,             # Column G: (D - C)
                             col_h              # Column H: (E - C)
                         ])
@@ -75,7 +76,7 @@ def analyze_xauusd_data(input_file, output_file, summary_file, max_value=5):
                 # Create a DataFrame for the results
                 results_df = pd.DataFrame(results, columns=[
                     'Row Number', 'Delta (Max-Min)', 'First Open Price',
-                    'First Extreme', 'Second Extreme', 'Delta (Next 5 Rows)', 'Column G (D-C)', 'Column H (E-C)'
+                    'First Extreme', 'Second Extreme', 'Delta (Next 4 Rows)', 'Column G (D-C)', 'Column H (E-C)'
                 ])
 
                 # Calculate I2, I3, I4 values
